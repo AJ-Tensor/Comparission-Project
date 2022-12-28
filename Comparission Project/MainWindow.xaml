@@ -1,0 +1,16 @@
+﻿<Window x:Class="Comparission_Project.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Comparission_Project"
+        mc:Ignorable="d"
+        Title="Model Object Comparission" Height="450" Width="600">
+    <Grid>
+        <Button Content="Read First Model" HorizontalAlignment="Left" Margin="0,25,0,0" VerticalAlignment="Top" Click="Button_Click"/>
+        <Label HorizontalAlignment="Left" Margin="0,0,0,0" VerticalAlignment="Top" Content="Matching Criteria is Start Point, End Point, Profile, Class. If all of these parameter  matches then it's match."/>
+        <Label HorizontalAlignment="Left" Margin="0,45,0,0" VerticalAlignment="Top" Content="Load the new model and press the below button"/>
+        <Button Content="Read Second Model" HorizontalAlignment="Left" Margin="0,70,0,0" VerticalAlignment="Top" Click="Button_Click_1"/>
+        <Button Content="Compare the model" HorizontalAlignment="Left" Margin="0,100,0,0" VerticalAlignment="Top" Click="Button_Click_2"/>
+    </Grid>
+</Window>
