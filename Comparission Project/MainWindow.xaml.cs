@@ -1,20 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection.Emit;
-using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 using Tekla.Structures.Model;
 
 namespace Comparission_Project
@@ -26,7 +13,7 @@ namespace Comparission_Project
     {
         public List<BeamComparission> List1 = new List<BeamComparission>();
         public List<BeamComparission> List2 = new List<BeamComparission>();
-        string path = "comparission.txt";
+        string path = "Comparison.txt";
         public MainWindow()
         {
             InitializeComponent();
