@@ -3,29 +3,36 @@ using System.IO;
 using System.Linq;
 using System.Windows;
 using Tekla.Structures.Model;
+using Microsoft.Office.Interop.Excel;
+using Microsoft.Office.Interop;
+using System.Windows.Input;
+using System;
+using System.Data.Common;
+using Tekla.Structures.Solid;
 
 namespace Comparission_Project
 {
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
-    public partial class MainWindow : Window
+    public partial class MainWindow : System.Windows.Window
     {
-        public List<BeamComparission> List1 = new List<BeamComparission>();
-        public List<BeamComparission> List2 = new List<BeamComparission>();
+        public List<BeamComparison> List1 = new List<BeamComparison>();
+        public List<BeamComparison> List2 = new List<BeamComparison>();
         string path = "Comparison.txt";
+        string xlPath = "O.xlsx";
         public MainWindow()
         {
             InitializeComponent();
         }
-        public class BeamComparission
+        public class BeamComparison
         {
             public string GUID { get; set; }
             public string StartPoint { get; set; }
             public string EndPoint { get; set; }
             public string Profile { get; set; }
             public string Class { get; set; }
-            public BeamComparission(Beam beam)
+            public BeamComparison(Beam beam)
             {
                 this.StartPoint = beam.StartPoint.ToString();
                 this.EndPoint = beam.EndPoint.ToString();
@@ -34,21 +41,29 @@ namespace Comparission_Project
                 this.GUID = beam.Identifier.GUID.ToString();
             }
         }
+
+        public List<string> CreateRowFromData(BeamComparison beamComparission)
+        {
+            List<string> row = new List<string>();
+            row.Add(beamComparission.GUID);
+            row.Add(beamComparission.StartPoint);
+            row.Add(beamComparission.EndPoint);
+            row.Add(beamComparission.Profile);
+            row.Add(beamComparission.Class);
+            return row;
+        }
+
+
         private void Button_Click(object sender, RoutedEventArgs e)
         {
-            if (!File.Exists(path))
-            {
-                File.Create(path);
-            }
-            Model model = new Model();
-
+            Tekla.Structures.Model.Model model = new Tekla.Structures.Model.Model();
             var beams = model.GetModelObjectSelector().GetAllObjectsWithType(ModelObject.ModelObjectEnum.BEAM);
             while (beams.MoveNext())
             {
                 var current = beams.Current as Beam;
                 if (current != null)
                 {
-                    List1.Add(new BeamComparission(current));
+                    List1.Add(new BeamComparison(current));
                 }
             }
             System.Windows.MessageBox.Show("Close current model and open new model version");
@@ -56,91 +71,122 @@ namespace Comparission_Project
 
         private void Button_Click_1(object sender, RoutedEventArgs e)
         {
-            Model model = new Model();
-
+            Tekla.Structures.Model.Model model = new Tekla.Structures.Model.Model();
             var beams = model.GetModelObjectSelector().GetAllObjectsWithType(ModelObject.ModelObjectEnum.BEAM);
             while (beams.MoveNext())
             {
                 var current = beams.Current as Beam;
                 if (current != null)
                 {
-                    List2.Add(new BeamComparission(current));
+                    List2.Add(new BeamComparison(current));
                 }
-            }
-            if (!File.Exists(path))
-            {
-                File.Create(path);
             }
         }
 
         private void Button_Click_2(object sender, RoutedEventArgs e)
         {
-            List<BeamComparission> list1 = List1;
-            List<BeamComparission> list2 = List2;
-            if (!File.Exists(path))
-            {
-                File.Create(path);
-            }
-            List<string> strings= new List<string>();
-
-            strings.Add("model 1 Data");
-
-            for (int i = 0; i < list1.Count(); i++)
-            {
-                string first = list1[i].GUID;
-                string second = list1[i].StartPoint;
-                string third = list1[i].EndPoint;
-                string forth = list1[i].Profile;
-                string fifth = list1[i].Class;
-                string csvRow = string.Format("{0} \t{1}\t{2}\t{3}\t{4}", first, second, third, forth, fifth);
-                
-                strings.Add(csvRow);
-
-            }
-            strings.Add("\n");
-            strings.Add("model 2 Data");
-
-            for (int i = 0; i < list2.Count(); i++)
-            {
-                string first = list2[i].GUID;
-                string second= list2[i].StartPoint;
-                string third = list2[i].EndPoint;
-                string forth = list2[i].Profile;
-                string fifth = list2[i].Class;
-                string row = string.Format("{0}\t{1}\t{2}\t{3}\t{4}", first, second, third, forth, fifth);
-                strings.Add(row);
-                
-            }
-
-            strings.Add("\n\n");
-            strings.Add("Comparission for model 2");
-            foreach (BeamComparission item2 in list2)
-            {
-                string message = CompareBothFile(list1, item2);
-                strings.Add(message);
-            }
+            string strExeFilePath = System.Reflection.Assembly.GetExecutingAssembly().Location;
+           
+            xlPath = System.IO.Path.GetDirectoryName(strExeFilePath)+"\\Report.xlsx";
             
-            File.AppendAllLines(path, strings);
+            List<BeamComparison> list1 = List1;
+            List<BeamComparison> list2 = List2;
+            
+            Microsoft.Office.Interop.Excel.Application xlApp = new Microsoft.Office.Interop.Excel.Application();
+            Workbook xlWorkbook = xlApp.Workbooks.Open(xlPath);
+            _Worksheet Initial = xlWorkbook.Sheets[1];
+            _Worksheet Final = xlWorkbook.Sheets[2];
+            _Worksheet Comparission = xlWorkbook.Sheets[3];
+            List<string> title = new List<string>() { "GUID", "StartPoint", "EndPoint", "Profile", "Class" };
+            List<string> titleFinal = new List<string>() { "GUID_First Model", "StartPoint_First Model", "EndPoint_First Model", "Profile_First Model", "Class_First Model", "GUID_Second Model", "StartPoint_Second Model", "EndPoint_Second Model", "Profile_Second Model", "Class_Second Model", "Check", "Remark" };
+
+            PrintRowData(Initial, 1, title,1);
+            PrintRowData(Final, 1, title, 1);
+            PrintRowData(Comparission, 1, titleFinal, 1);
+
+            PrintSheet(Initial, list1,1);
+            PrintSheet(Final, list2,1);
+
+            PrintComparisonSheet(Comparission, list1, list2);
+
+            xlApp.Visible = true;
+            xlApp.UserControl = true;
+            xlWorkbook.Save();
         }
 
-        private string CompareBothFile(List<BeamComparission> list1, BeamComparission item2)
+        private void PrintComparisonSheet(_Worksheet comparission, List<BeamComparison> list1, List<BeamComparison> list2)
         {
-            string guidError =string.Format("GUID {0} Not matched",item2.GUID);
-            string spError = string.Format("Start Point {0} Not matched",item2.StartPoint);
-            string epError = string.Format("End Point {0} Not matched",item2.EndPoint);
-            string profileError = string.Format("Profile {0} Not matched",item2.Profile);
-            string classError = string.Format("Class {0} Not matched",item2.Class);
-
-            foreach (BeamComparission item in list1)
+            PrintSheet(comparission, list1, 1);
+            int row = 2;
+            for (int i = 0; i < list2.Count; i++)
             {
-                if (item2.GUID == item.GUID) guidError = string.Format("GUID {0} matched", item2.GUID);
-                if (item2.StartPoint == item.StartPoint) spError = string.Format("StartPoint {0} matched", item2.StartPoint);
-                if (item2.EndPoint == item.EndPoint) epError = string.Format("EndPoint {0} matched", item2.EndPoint);
-                if (item2.Profile == item.Profile) profileError = string.Format("Profile {0} matched", item2.Profile);
-                if (item2.Class == item.Class) classError = string.Format("Class {0} matched", item2.Class);
+                bool isMatched=false;
+                List<string> toPrint = CreateRowFromData(list2[i]);
+                for (int j = 0; j < list1.Count; j++)
+                {
+                    if (IsSameCoordinate(list1[j], list2[i]))
+                    {
+                        isMatched = true;
+                        string remark = "";
+                        if (list1[j].Profile != list2[i].Profile)
+                        {
+                            remark = remark + "Profile Changed. ";
+                        }
+                        if (list1[j].GUID != list2[i].GUID)
+                        {
+                            remark = remark + "GUID Changed. ";
+                        }
+                        if (list1[j].Class != list2[i].Class)
+                        {
+                            remark = remark + "Class Changed. ";
+                        }
+                        if (remark == "")
+                        {
+                            toPrint.Add("Checked-OK");
+                        }
+                        else
+                        {
+                            toPrint.Add("Checked-Failed");
+                        }
+                        toPrint.Add(remark);
+                    }
+                }
+                if (!isMatched) 
+                {
+                    toPrint.Add("Checked-Failed");
+                    toPrint.Add("New Object Detected");
+                }
+                PrintRowData(comparission, row, toPrint, 6);
+                row++;
             }
-            return guidError+"\n"+spError + "\n" +epError+"\n" +profileError + "\n" +classError + "\n";
-            
+        }
+
+        private void PrintSheet(_Worksheet sheet, List<BeamComparison> list,int column)
+        {
+            int rowNumber = 2;
+            for (int i = 0; i < list.Count; i++)
+            {
+                PrintRowData(sheet, rowNumber, CreateRowFromData(list[i]),column);
+                rowNumber++;
+            }
+        }
+
+        private void PrintRowData(_Worksheet initial, int rowNumber, List<string> list, int column)
+        {
+            for (int i = 0; i < list.Count; i++)
+            {
+                initial.Cells[rowNumber, column] = list[i];
+                column++;
+            }
+        }
+        public bool IsSameCoordinate(BeamComparison beam1, BeamComparison beam2)
+        {
+            var result = false;
+            if (beam1.StartPoint == beam2.StartPoint && beam1.EndPoint == beam2.EndPoint)
+            {
+                result = true;
+            }
+            return result;
         }
     }
 }
