@@ -57,6 +57,7 @@ namespace Comparission_Project
         private void Button_Click(object sender, RoutedEventArgs e)
         {
             Tekla.Structures.Model.Model model = new Tekla.Structures.Model.Model();
+            if(!model.GetConnectionStatus()) System.Windows.MessageBox.Show("Unable to connect to Tekla");
             var beams = model.GetModelObjectSelector().GetAllObjectsWithType(ModelObject.ModelObjectEnum.BEAM);
             while (beams.MoveNext())
             {
